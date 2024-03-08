@@ -29,6 +29,7 @@ def main():
 
     os.makedirs('/RESULTS/FIRE_IMAGES/', mode=0o777, exist_ok=True)
     RESULTS=[]
+    BAG_OF_WORDS=[]
     #directory='/images'
     counter=0
     #for FILE in os.listdir(directory):
@@ -43,13 +44,28 @@ def main():
         response=run_llava(model, processor, user_question, user_prompt, image_file)
         print(FILE)
         #print(response)
+        pattern='###Assistant:'
         print(response[-1:])
         RESULTS.append(FILE + ', ' + response[-1:])
-        if int(response[-1])==1:
-            shutil.copy(image_file, '/RESULTS/FIRE_IMAGES/')
-        #counter += 1
-        #if counter > 100:
-        #    break
+        if int(response[-1])==1: # FIRE!!!
+            if not os.path.isfile(image_file):
+                shutil.copy(image_file, '/RESULTS/FIRE_IMAGES/')
+
+            user_question="An expert inspected the image and claimed to see a wildfire in it."
+            #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
+            #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
+            user_prompt='Please, generate a detailed explanation of why the expert thinks this way.'
+            response=run_llava(model, processor, user_question, user_prompt, image_file).split(pattern, 1)[1]
+            BAG_OF_WORDS.append(image_file)
+            BAG_OF_WORDS.append(response)
+            print('--------------->>>>>>>>>>>>>>>>>>')
+            print(response)
+            #break
+            
+
+        counter += 1
+        if counter > 1000:
+            break
 
     os.chmod("/RESULTS/FIRE_IMAGES/", 0o777)
     with open('/RESULTS/output.csv','w') as result_file:
@@ -57,6 +73,9 @@ def main():
         wr.writerow(RESULTS)
       
 
+    with open('/RESULTS/bag_of_words.csv','w') as bow_file:
+        wr = csv.writer(bow_file, dialect='excel')
+        wr.writerow(BAG_OF_WORDS)
 
 
 
