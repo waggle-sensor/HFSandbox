@@ -30,97 +30,151 @@ def main():
     shuffle(files)
 
     os.makedirs('/RESULTS/FIRE_IMAGES/', mode=0o777, exist_ok=True)
+    #RESULTS=[]
+    #BAG_OF_WORDS=[]
+    #NEUTRAL_BAG_OF_WORDS=[]
+    #CHECKPOINT=[]
+    CHECKPOINT, RESULTS, BAG_OF_WORDS, NEUTRAL_BAG_OF_WORDS = load_checkpoint()
+    #checkpoint_path='/RESULTS/checkpoint.txt'
+    #if os.path.isfile(checkpoint_path):
+    #    with open(checkpoint_path) as file:
+    #        CHECKPOINT = [line.rstrip() for line in file]
+
+    counter=0
+    for FILE in files:
+        if FILE not in CHECKPOINT:
+            user_question="Is there smoke or not in the image?"
+            #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
+            #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
+            user_prompt='Please generate the number 1 if there is smoke in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
+
+            image_file=FILE
+            #image_file=os.path.join(directory, FILE)
+            response, time=run_llava(model, processor, user_question, user_prompt, image_file)
+            print(FILE)
+            #print(response)
+            pattern='###Assistant:'
+            print(response[-1:])
+            RESULTS.append(FILE + ', ' + response[-1:] + ', ' + str(time))
+            if int(response[-1])==1: # FIRE!!!
+                #if not os.path.isfile(image_file):
+                try:
+                    #print('Trying to copy '+image_file+' into '+'/RESULTS/FIRE_IMAGES/')
+                    shutil.copy(image_file, '/RESULTS/FIRE_IMAGES/')
+                except IOError:
+                    print("Unable to copy file: ", image_file)
+
+                user_question="An expert inspected the image and claimed to see a wildfire in it."
+                #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
+                #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
+                user_prompt='Please, generate a detailed explanation of why the expert thinks this way.'
+                response, time=run_llava(model, processor, user_question, user_prompt, image_file)
+                response=response.split(pattern, 1)[1]
+                BAG_OF_WORDS.append(image_file)
+                BAG_OF_WORDS.append(response)
+                BAG_OF_WORDS.append(str(time))
+                print('--------------->>>>>>>>>>>>>>>>>>')
+                print(response)
+                #break
+                
+                user_question="As a WildfireWatcher, your task is to scrutinize optical camera images for wildfire indicators."
+                #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
+                #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
+                #user_prompt='Please, generate a detailed explanation of why the expert thinks this way.'
+                user_prompt='Issue a one-word alert based on your findings: WILDFIRE if smoke plumes, dispersed smoke, or visible fire are detected; NA for absence of fire or smoke.'
+                response, time=run_llava(model, processor, user_question, user_prompt, image_file)
+                response=response.split(pattern, 1)[1]
+                BAG_OF_WORDS.append(response)
+                BAG_OF_WORDS.append(str(time))
+                print('--------------->>>>>>>>>>>>>>>>>>')
+                print(response)
+                #break
+
+                user_question="Is there fire in the image?"
+                #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
+                #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
+                #user_prompt='Please, generate a detailed explanation of why the expert thinks this way.'
+                user_prompt='Please, provide a detailled explanation of what you see in the image.'
+                response, time=run_llava(model, processor, user_question, user_prompt, image_file)
+                response=response.split(pattern, 1)[1]
+                NEUTRAL_BAG_OF_WORDS.append(image_file)
+                NEUTRAL_BAG_OF_WORDS.append(response)
+                NEUTRAL_BAG_OF_WORDS.append(str(time))
+                print('--------------->>>>>>>>>>>>>>>>>>')
+                print(response)
+                #break
+
+
+            CHECKPOINT.append(FILE)
+            counter += 1
+            if counter%10 == 0:
+                save_results(RESULTS=RESULTS, BAG_OF_WORDS=BAG_OF_WORDS, NEUTRAL_BAG_OF_WORDS=NEUTRAL_BAG_OF_WORDS, CHECKPOINT=CHECKPOINT)
+
+    save_results(RESULTS=RESULTS, BAG_OF_WORDS=BAG_OF_WORDS, NEUTRAL_BAG_OF_WORDS=NEUTRAL_BAG_OF_WORDS, CHECKPOINT=CHECKPOINT)
+
+
+
+
+
+def load_checkpoint(checkpoint_path='/RESULTS/checkpoint.txt',
+                    output_path='/RESULTS/output.csv',
+                    bag_of_words_path='/RESULTS/bag_of_words.csv',
+                    neutral_bag_of_words_path='/RESULTS/neutral_bag_of_words.csv'):
     RESULTS=[]
     BAG_OF_WORDS=[]
     NEUTRAL_BAG_OF_WORDS=[]
-    #directory='/images'
-    counter=0
-    #for FILE in os.listdir(directory):
-    for FILE in files:
-        user_question="Is there smoke or not in the image?"
-        #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
-        #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
-        user_prompt='Please generate the number 1 if there is smoke in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
+    CHECKPOINT=[]
+    if os.path.isfile(checkpoint_path):
+        with open(checkpoint_path) as file:
+            CHECKPOINT = [line.rstrip() for line in file]
 
-        image_file=FILE
-        #image_file=os.path.join(directory, FILE)
-        response, time=run_llava(model, processor, user_question, user_prompt, image_file)
-        print(FILE)
-        #print(response)
-        pattern='###Assistant:'
-        print(response[-1:])
-        RESULTS.append(FILE + ', ' + response[-1:] + ', ' + str(time))
-        if int(response[-1])==1: # FIRE!!!
-            #if not os.path.isfile(image_file):
-            try:
-                #print('Trying to copy '+image_file+' into '+'/RESULTS/FIRE_IMAGES/')
-                shutil.copy(image_file, '/RESULTS/FIRE_IMAGES/')
-            except IOError:
-                print("Unable to copy file: ", image_file)
+    if os.path.isfile(output_path):
+        with open(output_path) as file:
+            RESULTS = [line.rstrip() for line in file]
 
-            user_question="An expert inspected the image and claimed to see a wildfire in it."
-            #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
-            #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
-            user_prompt='Please, generate a detailed explanation of why the expert thinks this way.'
-            response, time=run_llava(model, processor, user_question, user_prompt, image_file)
-            response=response.split(pattern, 1)[1]
-            BAG_OF_WORDS.append(image_file)
-            BAG_OF_WORDS.append(response)
-            BAG_OF_WORDS.append(str(time))
-            print('--------------->>>>>>>>>>>>>>>>>>')
-            print(response)
-            #break
-            
-            user_question="As a WildfireWatcher, your task is to scrutinize optical camera images for wildfire indicators."
-            #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
-            #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
-            #user_prompt='Please, generate a detailed explanation of why the expert thinks this way.'
-            user_prompt='Issue a one-word alert based on your findings: WILDFIRE if smoke plumes, dispersed smoke, or visible fire are detected; NA for absence of fire or smoke.'
-            response, time=run_llava(model, processor, user_question, user_prompt, image_file)
-            response=response.split(pattern, 1)[1]
-            BAG_OF_WORDS.append(response)
-            BAG_OF_WORDS.append(str(time))
-            print('--------------->>>>>>>>>>>>>>>>>>')
-            print(response)
-            #break
+    if os.path.isfile(bag_of_words_path):
+        with open(bag_of_words_path) as file:
+            BAG_OF_WORDS = [line.rstrip() for line in file]
 
-            user_question="Is there fire in the image?"
-            #user_prompt="A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions."
-            #user_prompt='Please generate the number 1 if there is fire in the image, otherwise generate the number 0. Only one number has to be generated in your response.'
-            #user_prompt='Please, generate a detailed explanation of why the expert thinks this way.'
-            user_prompt='Please, provide a detailled explanation of what you see in the image.'
-            response, time=run_llava(model, processor, user_question, user_prompt, image_file)
-            response=response.split(pattern, 1)[1]
-            NEUTRAL_BAG_OF_WORDS.append(image_file)
-            NEUTRAL_BAG_OF_WORDS.append(response)
-            NEUTRAL_BAG_OF_WORDS.append(str(time))
-            print('--------------->>>>>>>>>>>>>>>>>>')
-            print(response)
-            #break
+    if os.path.isfile(neutral_bag_of_words_path):
+        with open(neutral_bag_of_words_path) as file:
+            NEUTRAL_BAG_OF_WORDS = [line.rstrip() for line in file]
+
+    return CHECKPOINT, RESULTS, BAG_OF_WORDS, NEUTRAL_BAG_OF_WORDS
 
 
-        #counter += 1
-        #if counter > 50:
-        #    break
+
+
+
+def save_results(RESULTS, BAG_OF_WORDS, NEUTRAL_BAG_OF_WORDS, CHECKPOINT,
+                 checkpoint_path='/RESULTS/checkpoint.txt',
+                 output_path='/RESULTS/output.csv',
+                 bag_of_words_path='/RESULTS/bag_of_words.csv',
+                 neutral_bag_of_words_path='/RESULTS/neutral_bag_of_words.csv'):
+    with open(checkpoint_path, 'w') as f:
+        for file_line in CHECKPOINT:
+            f.write(f"{file_line}\n")
+
+    os.chmod(checkpoint_path, 0o666)
 
     os.chmod("/RESULTS/FIRE_IMAGES/", 0o777)
-    with open('/RESULTS/output.csv','w') as result_file:
+    with open(output_path,'w') as result_file:
         wr = csv.writer(result_file, dialect='excel')
         wr.writerow(RESULTS)
       
-    os.chmod("/RESULTS/output.csv", 0o666)
+    os.chmod(output_path, 0o666)
 
-    with open('/RESULTS/bag_of_words.csv','w') as bow_file:
+    with open(bag_of_words_path,'w') as bow_file:
         wr = csv.writer(bow_file, dialect='excel')
         wr.writerow(BAG_OF_WORDS)
 
-    os.chmod("/RESULTS/bag_of_words.csv", 0o666)
+    os.chmod(bag_of_words_path, 0o666)
 
-    with open('/RESULTS/neutral_bag_of_words.csv','w') as bow_file:
+    with open(neutral_bag_of_words_path,'w') as bow_file:
         wr = csv.writer(bow_file, dialect='excel')
         wr.writerow(NEUTRAL_BAG_OF_WORDS)
 
-    os.chmod("/RESULTS/neutral_bag_of_words.csv", 0o666)
+    os.chmod(neutral_bag_of_words_path, 0o666)
 
 
 
