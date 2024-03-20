@@ -15,5 +15,6 @@ COPY . .
 
 #RUN python3 ./save_hf_model.py
 #sudo docker run --gpus all -it --rm -v /home/waggle/images:/images -v /home/waggle/.cache/huggingface:/hf_cache -v /home/waggle/RESULTS:/RESULTS hfsandbox:latest
+#sudo docker run --gpus all -it --rm -v /home/waggle/HPWREN:/images -v /home/waggle/.cache/huggingface:/hf_cache -v /home/waggle/RESULTS:/RESULTS hfsandbox:latest
 
 #ENTRYPOINT ["python", "run_llava-1.5-7b-hf_model.py"]
