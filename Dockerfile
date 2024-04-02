@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 #FROM python:latest
-FROM nvcr.io/nvidia/pytorch:24.01-py3
+#FROM nvcr.io/nvidia/pytorch:24.01-py3
+FROM nvcr.io/nvidia/pytorch:22.06-py3
 
 COPY requirements.txt requirements.txt
 
