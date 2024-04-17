@@ -2,3 +2,5 @@ numpy
 transformers[torch]
 accelerate
 bitsandbytes
+sentencepiece
+mpi4py

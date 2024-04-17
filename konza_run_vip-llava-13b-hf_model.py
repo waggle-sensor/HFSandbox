@@ -65,6 +65,7 @@ def main():
             user_prompt="This is an optical camera image. As a WildfireWatcher, your task is to scrutinize images for wildfire indicators."
             rgb_response, rgb_time=rgb_run_llava(model, processor, user_question, user_prompt, image_file)
             user_prompt="This is a pseudo-color thermal IR image showing relative temperatures of the scene. As a WildfireWatcher, your task is to scrutinize images for wildfire indicators."
+            #user_question="Is there fire or not in the infra red image?"
             ir_response, ir_time=ir_run_llava(model, processor, user_question, user_prompt, image_file)
 
             response=response.split(pattern, 1)[1]
@@ -86,7 +87,7 @@ def main():
 
             CHECKPOINT.append(FILE)
             counter += 1
-            if counter%2 == 0:
+            if counter%1 == 0:
                 save_results(RESULTS=RESULTS, BAG_OF_WORDS=BAG_OF_WORDS, NEUTRAL_BAG_OF_WORDS=NEUTRAL_BAG_OF_WORDS, CHECKPOINT=CHECKPOINT)
 
     save_results(RESULTS=RESULTS, BAG_OF_WORDS=BAG_OF_WORDS, NEUTRAL_BAG_OF_WORDS=NEUTRAL_BAG_OF_WORDS, CHECKPOINT=CHECKPOINT)
